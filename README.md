@@ -1,95 +1,130 @@
 # GMGN V/L Radar
 
-Public backup for GMGN RADAR `gmgn-dlmm-radar` no-agent cron.
+A small Solana pool scanner built around GMGN market data. It ranks active pools by hourly volume relative to liquidity, adds a short-term flow reading, and posts the result to Telegram.
 
-## What it does
+The script is meant for quick DLMM rotation. It does not place trades or touch a wallet.
 
-- Runs every 10 minutes through Hermes cron.
-- Fetches GMGN trending candidates for Solana.
-- Ranks each chain by rolling 1-hour `volume / liquidity` (V/L).
-- Shows a compact `FLOW` signal: `(last 5m volume × 12) / rolling 1h volume`.
-- Sends the report directly to Telegram, avoiding the Hermes cron wrapper.
-- Uses no LLM tokens (`no_agent: true`).
+## How it works
 
-## Current gates
+The candidate list comes from GMGN Trending on Solana. Pools are ranked by:
 
-### Solana
+```text
+V/L = rolling 1h volume / liquidity
+```
 
-- interval: 1h
-- liquidity >= $2,500
-- holders >= 200
-- age >= 1h
-- gas fee >= 20
-- smart degen >= 2
-- swaps >= 1,500
-- market cap >= $100,000
-- has social
-- not wash trading
-- creator close is **not required**
+`FLOW` compares the latest five minutes with the rolling one-hour volume:
 
+```text
+FLOW = (latest 5m volume * 12) / rolling 1h volume
+```
 
-## Secret setup
+The arrow adds direction from the same five-minute window:
 
-Secrets are intentionally excluded from Git. Create:
+- `↑` price up and buy volume leads
+- `↓` price down and sell volume leads
+- `↔` mixed or conflicting flow
 
-`~/.config/gmgn-dlmm-radar/telegram.env`
+Speed labels:
+
+- `🔥` above 1.20
+- `🟢` 0.80 to 1.20
+- `🟡` 0.50 to 0.79
+- `🧊` below 0.50
+
+A hot reading measures activity, not safety. `🔥↓` usually means an active sell-off.
+
+## Filters
+
+The default Solana scan uses:
+
+| Filter | Value |
+| --- | ---: |
+| Interval | 1h |
+| Minimum liquidity | $2,500 |
+| Minimum holders | 200 |
+| Minimum age | 1h |
+| Minimum gas fee | 20 |
+| Minimum smart degen count | 2 |
+| Minimum swaps | 1,500 |
+| Minimum market cap | $100,000 |
+| Social profile | Required |
+| Wash trading | Excluded |
+| Creator close | Not required |
+
+## Requirements
+
+- Python 3.9 or newer
+- [GMGN CLI](https://www.npmjs.com/package/gmgn-cli), configured with access to market commands
+- Hermes Agent for the included scheduled-job setup
+- A Telegram bot token and target chat ID
+
+## Install
+
+```bash
+git clone https://github.com/ayehuasca/gmgn-vl-radar.git
+cd gmgn-vl-radar
+./install.sh
+```
+
+Configure GMGN CLI separately, then edit:
+
+```text
+~/.config/gmgn-dlmm-radar/telegram.env
+```
 
 ```env
-TG_BOT_TOKEN=your_telegram_bot_token
-TG_CHAT_ID=your_telegram_chat_id
+TG_BOT_TOKEN=your_bot_token
+TG_CHAT_ID=your_chat_id
 RADAR_TIMEZONE=UTC
 RADAR_LOCATION=UTC
 ```
 
-Protect it:
+The timezone uses an IANA name. Examples:
+
+| Location | `RADAR_TIMEZONE` | `RADAR_LOCATION` |
+| --- | --- | --- |
+| Bali | `Asia/Makassar` | `Bali` |
+| Jakarta | `Asia/Jakarta` | `Jakarta` |
+| New York | `America/New_York` | `New York` |
+| UTC | `UTC` | `UTC` |
+
+The installer creates the env file with mode `600`. The real credentials stay outside the repository.
+
+## Run it
+
+Send one report immediately:
 
 ```bash
-chmod 600 ~/.config/gmgn-dlmm-radar/telegram.env
+python3 ~/.hermes/scripts/gmgn-dlmm-radar.py
 ```
 
-Timezone examples:
+The included cron config runs every ten minutes with `no_agent: true`. The script sends directly to Telegram, so Hermes delivery remains local:
 
-- Bali/WITA: `RADAR_TIMEZONE=Asia/Makassar`, `RADAR_LOCATION=Bali`
-- Jakarta/WIB: `RADAR_TIMEZONE=Asia/Jakarta`, `RADAR_LOCATION=Jakarta`
-- UTC: `RADAR_TIMEZONE=UTC`, `RADAR_LOCATION=UTC`
-- New York: `RADAR_TIMEZONE=America/New_York`, `RADAR_LOCATION=New_York`
-
-Use a valid IANA timezone name. If invalid, the script falls back to UTC.
-
-GMGN CLI must already be configured separately via `gmgn-cli config`.
-
-## Restore
-
-```bash
-./install.sh
+```json
+{
+  "name": "gmgn-dlmm-radar",
+  "schedule": "*/10 * * * *",
+  "script": "gmgn-dlmm-radar.py",
+  "no_agent": true,
+  "deliver": "local"
+}
 ```
 
-The installer copies the sanitized script and filter config. Recreate the Hermes cron using `cron-manifest.json` as reference, or through Hermes with:
+Use `config/cron.json` when creating the scheduled job.
 
-- schedule: `*/10 * * * *`
-- script: `gmgn-dlmm-radar.py`
-- no_agent: `true`
-- delivery: `local`
-
-## Example Telegram output
-
-The actual candidates and values change every run:
+## Output
 
 ```text
 GMGN V/L — 20:01 Bali
 
 SOLANA
-SYM       VOL   LIQ V/L FLOW  SWP   MC
---------------------------------------
-App      573k   78k 7.3 🧊0.5 5657 815k
+SYM       VOL   LIQ V/L  FLOW  SWP   MC
+---------------------------------------
+App      573k   78k 7.3 🧊↔0.5 5657 815k
 
-K-HOME   619k  337k 1.8 🧊0.4 4964 1.5M
+K-HOME   619k  337k 1.8 🔥↓2.4 4964 1.5M
 
-BOIÚNA   105k   84k 1.3 🔥2.4 1674 704k
-
-ORANGE    58k   87k 0.7 🧊0.1 2921 1.1M
-
-Dealer    47k  153k 0.3 🔥1.2 1627 3.3M
+BOIÚNA   105k   84k 1.3 🔥↑1.6 1674 704k
 
 V/L
 1h volume / liquidity.
@@ -104,15 +139,19 @@ MAX HOLD 1 HOUR.
 Get in, get out, then rotate to next pool.
 ```
 
-`FLOW` speed is calculated as `(last 5m volume × 12) / rolling 1h volume`. Direction uses 5m price movement plus 5m buy/sell volume:
+## Files
 
-- `↑`: price up and buy volume dominant
-- `↓`: price down and sell volume dominant
-- `↔`: mixed/chop or signals disagree
+```text
+src/gmgn-dlmm-radar.py   scanner and Telegram sender
+config/filter-query.json GMGN filter reference
+config/cron.json         scheduled-job settings
+telegram.env.example     environment template
+install.sh               local installer
+```
 
-Speed thresholds:
+## Notes
 
-- `🔥 > 1.20`: accelerating / makin panas
-- `🟢 0.80–1.20`: active / aktif
-- `🟡 0.50–0.79`: cooling / mulai dingin
-- `🧊 < 0.50`: cold / dingin
+- The report is a scanner, not an execution system.
+- FLOW is a five-minute signal against a one-hour baseline. A ten-minute schedule means a delivered message can age before the next run.
+- Token symbols are display-only. Use the token address before acting on a result.
+- Maximum hold is an operating rule for this setup, not a guarantee of profit.

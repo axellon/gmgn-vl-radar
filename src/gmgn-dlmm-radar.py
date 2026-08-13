@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
-"""GMGN DLMM radar -> sends table straight to Telegram via Bot API (no wrapper)."""
-import json, subprocess, os, sys, time
-import urllib.request, urllib.parse
+"""Scan Solana pools and send a compact V/L report to Telegram."""
+
+import json
+import os
+import subprocess
+import sys
+import time
+import urllib.parse
+import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -21,7 +27,7 @@ RADAR_LOCATION = os.environ.get("RADAR_LOCATION", RADAR_TIMEZONE)
 CHAIN = "sol"
 LIMIT = 100
 
-# Exact GMGN UI filter supplied by the user. Ranking is 1h volume descending.
+# GMGN Trending provides the candidate set. Ranking happens locally by V/L.
 TREND_CMD = (
     "gmgn-cli market trending --chain sol --interval 1h --limit 100 "
     "--order-by volume --direction desc "
@@ -140,7 +146,7 @@ def build():
         lines.append(f"{'SYM':<7} {'VOL':>5} {'LIQ':>5} {'V/L':>3} {'FLOW':>5} {'SWP':>4} {'MC':>4}")
         lines.append("-" * 39)
         if not hits:
-            lines.append("kosong")
+            lines.append("none")
         for t in hits[:12]:
             sym = (t.get("symbol") or "?")[:7]
             vol_n = float(t.get('volume') or 0)
