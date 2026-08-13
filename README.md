@@ -60,13 +60,66 @@ The default Solana scan uses:
 
 ## Install
 
+### 1. Install the radar
+
 ```bash
 git clone https://github.com/ayehuasca/gmgn-vl-radar.git
 cd gmgn-vl-radar
 ./install.sh
 ```
 
-Configure GMGN CLI separately, then edit:
+### 2. Set up GMGN API access
+
+Install GMGN CLI if it is not already available:
+
+```bash
+npm install -g gmgn-cli
+```
+
+Start the API setup:
+
+```bash
+gmgn-cli config
+```
+
+The command prints a GMGN API Key creation link. Open that link in a browser, sign in to GMGN, and create an API key. Copy the key, then apply it locally:
+
+```bash
+gmgn-cli config --apply YOUR_GMGN_API_KEY
+```
+
+Check the setup:
+
+```bash
+gmgn-cli config --check
+```
+
+A successful check exits without an error. You can also test the market endpoint:
+
+```bash
+gmgn-cli market trending \
+  --chain sol \
+  --interval 1h \
+  --limit 5
+```
+
+GMGN CLI writes the API key and its generated private key to:
+
+```text
+~/.config/gmgn/.env
+```
+
+Do not copy that file into this repository. Do not paste the API key into `src/gmgn-dlmm-radar.py`. The script calls GMGN CLI, and GMGN CLI reads the credentials from `~/.config/gmgn/.env` automatically.
+
+If `gmgn-cli config --check` fails:
+
+- `gmgn-cli: command not found`: run `npm install -g gmgn-cli` again.
+- `401` or `403`: confirm the key with `gmgn-cli config --apply YOUR_GMGN_API_KEY`. GMGN market commands require IPv4, so disable outbound IPv6 if the key is valid but access is still rejected.
+- `429`: wait for the rate limit to reset before retrying.
+
+### 3. Set up Telegram
+
+Edit:
 
 ```text
 ~/.config/gmgn-dlmm-radar/telegram.env
