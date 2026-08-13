@@ -72,6 +72,32 @@ def flow_5m(t):
             return None, "-"
         vol_5m = sum(float(c.get("volume") or 0) for c in candles)
         ratio = (vol_5m * 12) / vol_1h
+        open_5m = float(candles[0].get("open") or 0)
+        close_5m = float(candles[-1].get("close") or 0)
+        price_change_5m = ((close_5m / open_5m) - 1) if open_5m > 0 else 0
+
+        # Fetch exact 5m directional volume. FLOW speed and direction must use
+        # the same horizon so old 1h activity cannot mask a current sell-off.
+        info_cmd = [
+            "gmgn-cli", "token", "info", "--chain", chain,
+            "--address", address, "--raw",
+        ]
+        info_out = subprocess.run(
+            info_cmd, capture_output=True, text=True, timeout=25
+        ).stdout
+        price_data = json.loads(info_out).get("price", {})
+        buy_vol_5m = float(price_data.get("buy_volume_5m") or 0)
+        sell_vol_5m = float(price_data.get("sell_volume_5m") or 0)
+
+        # Require price and directional volume to agree. A 5% margin prevents
+        # tiny buy/sell differences from being mislabeled directional.
+        if price_change_5m > 0.01 and buy_vol_5m > sell_vol_5m * 1.05:
+            direction = "↑"
+        elif price_change_5m < -0.01 and sell_vol_5m > buy_vol_5m * 1.05:
+            direction = "↓"
+        else:
+            direction = "↔"
+
         if ratio > 1.20:
             icon = "🔥"
         elif ratio >= 0.80:
@@ -80,7 +106,7 @@ def flow_5m(t):
             icon = "🟡"
         else:
             icon = "🧊"
-        return ratio, f"{icon}{ratio:.1f}"
+        return ratio, f"{icon}{direction}{ratio:.1f}"
     except Exception:
         return None, "-"
 
@@ -111,8 +137,8 @@ def build():
 
     def add_section(title, hits):
         lines.append(title)
-        lines.append(f"{'SYM':<7} {'VOL':>5} {'LIQ':>5} {'V/L':>3} {'FLOW':>4} {'SWP':>4} {'MC':>4}")
-        lines.append("-" * 38)
+        lines.append(f"{'SYM':<7} {'VOL':>5} {'LIQ':>5} {'V/L':>3} {'FLOW':>5} {'SWP':>4} {'MC':>4}")
+        lines.append("-" * 39)
         if not hits:
             lines.append("kosong")
         for t in hits[:12]:
@@ -125,7 +151,7 @@ def build():
             _, flow = flow_5m(t)
             swaps = str(int(float(t.get('swaps') or 0)))
             mc = money(t.get('market_cap'))
-            lines.append(f"{sym:<7} {vol:>5} {liq:>5} {vl:>3} {flow:>4} {swaps:>4} {mc:>4}")
+            lines.append(f"{sym:<7} {vol:>5} {liq:>5} {vl:>3} {flow:>5} {swaps:>4} {mc:>4}")
             lines.append("")
 
         # Remove the trailing blank after the last token.
@@ -141,6 +167,7 @@ def build():
         "",
         "FLOW",
         "🔥 hot   🟢 active   🟡 cooling   🧊 cold",
+        "↑ bullish   ↓ bearish   ↔ mixed/chop",
         "",
         "RULE",
         "MAX HOLD 1 HOUR.",

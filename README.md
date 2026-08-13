@@ -97,13 +97,20 @@ Higher = faster potential fee velocity.
 
 FLOW
 🔥 hot   🟢 active   🟡 cooling   🧊 cold
+↑ bullish   ↓ bearish   ↔ mixed/chop
 
 RULE
 MAX HOLD 1 HOUR.
 Get in, get out, then rotate to next pool.
 ```
 
-`FLOW` is calculated as `(last 5m volume × 12) / rolling 1h volume`:
+`FLOW` speed is calculated as `(last 5m volume × 12) / rolling 1h volume`. Direction uses 5m price movement plus 5m buy/sell volume:
+
+- `↑`: price up and buy volume dominant
+- `↓`: price down and sell volume dominant
+- `↔`: mixed/chop or signals disagree
+
+Speed thresholds:
 
 - `🔥 > 1.20`: accelerating / makin panas
 - `🟢 0.80–1.20`: active / aktif
