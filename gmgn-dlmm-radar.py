@@ -143,7 +143,6 @@ def build():
         "MAX HOLD 1 JAM / MAX HOLD 1 HOUR.",
         "Cuma get in, get out, lalu cari pool lain.",
         "Get in, get out, then rotate to next pool.",
-        "EDGE KITA = ROTASI CEPAT / FAST ROTATION.",
     ])
     return "```\n" + "\n".join(lines) + "\n```"
 
