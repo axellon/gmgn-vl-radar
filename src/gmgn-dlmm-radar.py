@@ -98,11 +98,11 @@ def flow_5m(t):
         # Require price and directional volume to agree. A 5% margin prevents
         # tiny buy/sell differences from being mislabeled directional.
         if price_change_5m > 0.01 and buy_vol_5m > sell_vol_5m * 1.05:
-            direction = "↑"
+            direction = "📈"
         elif price_change_5m < -0.01 and sell_vol_5m > buy_vol_5m * 1.05:
-            direction = "↓"
+            direction = "📉"
         else:
-            direction = "↔"
+            direction = "🔄"
 
         if ratio > 1.20:
             icon = "🔥"
@@ -173,7 +173,7 @@ def build():
         "",
         "FLOW",
         "🔥 hot   🟢 active   🟡 cooling   🧊 cold",
-        "↑ bullish   ↓ bearish   ↔ mixed/chop",
+        "📈 bullish  📉 bearish  🔄 mixed/chop",
         "",
         "RULE",
         "MAX HOLD 1 HOUR.",

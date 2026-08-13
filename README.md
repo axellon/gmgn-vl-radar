@@ -20,9 +20,9 @@ FLOW = (latest 5m volume * 12) / rolling 1h volume
 
 The arrow adds direction from the same five-minute window:
 
-- `↑` price up and buy volume leads
-- `↓` price down and sell volume leads
-- `↔` mixed or conflicting flow
+- `📈` price up and buy volume leads
+- `📉` price down and sell volume leads
+- `🔄` mixed or conflicting flow
 
 Speed labels:
 
@@ -31,7 +31,7 @@ Speed labels:
 - `🟡` 0.50 to 0.79
 - `🧊` below 0.50
 
-A hot reading measures activity, not safety. `🔥↓` usually means an active sell-off.
+A hot reading measures activity, not safety. `🔥📉` usually means an active sell-off.
 
 ## Filters
 
@@ -120,11 +120,11 @@ GMGN V/L — 20:01 Bali
 SOLANA
 SYM       VOL   LIQ V/L  FLOW  SWP   MC
 ---------------------------------------
-App      573k   78k 7.3 🧊↔0.5 5657 815k
+App      573k   78k 7.3 🧊🔄0.5 5657 815k
 
-K-HOME   619k  337k 1.8 🔥↓2.4 4964 1.5M
+K-HOME   619k  337k 1.8 🔥📉2.4 4964 1.5M
 
-BOIÚNA   105k   84k 1.3 🔥↑1.6 1674 704k
+BOIÚNA   105k   84k 1.3 🔥📈1.6 1674 704k
 
 V/L
 1h volume / liquidity.
@@ -132,7 +132,7 @@ Higher = faster potential fee velocity.
 
 FLOW
 🔥 hot   🟢 active   🟡 cooling   🧊 cold
-↑ bullish   ↓ bearish   ↔ mixed/chop
+📈 bullish  📉 bearish  🔄 mixed/chop
 
 RULE
 MAX HOLD 1 HOUR.
