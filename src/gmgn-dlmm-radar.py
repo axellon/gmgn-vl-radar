@@ -143,8 +143,8 @@ def build():
 
     def add_section(title, hits):
         lines.append(title)
-        lines.append(f"{'SYM':<7} {'VOL':>5} {'LIQ':>5} {'V/L':>3} {'FLOW':>5} {'SWP':>4} {'MC':>4}")
-        lines.append("-" * 39)
+        lines.append(f"{'SYM':<7} {'VOL':>5} {'LIQ':>5}  {'V/L':>3}  {'FLOW':>5} {'SWP':>4} {'MC':>4}")
+        lines.append("-" * 41)
         if not hits:
             lines.append("none")
         for t in hits[:12]:
@@ -157,7 +157,7 @@ def build():
             _, flow = flow_5m(t)
             swaps = str(int(float(t.get('swaps') or 0)))
             mc = money(t.get('market_cap'))
-            lines.append(f"{sym:<7} {vol:>5} {liq:>5} {vl:>3} {flow:>5} {swaps:>4} {mc:>4}")
+            lines.append(f"{sym:<7} {vol:>5} {liq:>5}  {vl:>3}  {flow:>5} {swaps:>4} {mc:>4}")
             lines.append("")
 
         # Remove the trailing blank after the last token.
