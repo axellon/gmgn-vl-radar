@@ -118,13 +118,13 @@ Use `config/cron.json` when creating the scheduled job.
 GMGN V/L — 20:01 Bali
 
 SOLANA
-SYM       VOL   LIQ  V/L   FLOW  SWP   MC
------------------------------------------
-App      573k   78k  7.3  🧊🔄0.5 5657 815k
+SYM       VOL   LIQ  V/L  SWP    MC   FLOW
+------------------------------------------
+App      573k   78k  7.3 5657  815k  🧊🔄0.5
 
-K-HOME   619k  337k  1.8  🔥📉2.4 4964 1.5M
+K-HOME   619k  337k  1.8 4964  1.5M  🔥📉2.4
 
-BOIÚNA   105k   84k  1.3  🔥📈1.6 1674 704k
+BOIÚNA   105k   84k  1.3 1674  704k  🔥📈1.6
 
 V/L
 1h volume / liquidity.
