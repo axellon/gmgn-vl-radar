@@ -121,18 +121,24 @@ def build():
             lines.append(f"{sym:<8} {vol:>6} {liq:>6} {vl:>5} {flow:>6} {swaps:>5} {mc:>6}")
 
     add_section("SOLANA", sol_hits)
-    table = "```\n" + "\n".join(lines) + "\n```"
-    notes = (
-        "\n\n*V/L:* Volume 1 jam ÷ liquidity. Semakin tinggi, semakin kencang potensi fee.\n"
-        "*V/L:* 1h volume ÷ liquidity. Higher means faster potential fee velocity.\n\n"
-        "*FLOW:* 🔥 makin panas | 🟢 aktif | 🟡 mulai dingin | 🧊 dingin.\n"
-        "*FLOW:* 🔥 accelerating | 🟢 active | 🟡 cooling | 🧊 cold.\n\n"
-        "*ATURAN / RULE:* Maksimum hold hanya 1 jam. Ini cuma buat get in, get out. "
-        "Ingat, edge kita adalah keluar cepat lalu cari pool lain.\n"
-        "*Maximum hold: 1 hour only. This is strictly get in, get out. "
-        "Our edge is exiting fast and rotating into the next pool.*"
-    )
-    return table + notes
+    lines.extend([
+        "",
+        "V/L",
+        "Volume 1h / liquidity.",
+        "Makin tinggi = potensi fee makin cepat.",
+        "Higher = faster potential fee velocity.",
+        "",
+        "FLOW",
+        "🔥 panas   🟢 aktif   🟡 dingin   🧊 mati",
+        "🔥 hot     🟢 active  🟡 cooling  🧊 cold",
+        "",
+        "ATURAN / RULE",
+        "MAX HOLD 1 JAM / MAX HOLD 1 HOUR.",
+        "Cuma get in, get out, lalu cari pool lain.",
+        "Get in, get out, then rotate to next pool.",
+        "EDGE KITA = ROTASI CEPAT / FAST ROTATION.",
+    ])
+    return "```\n" + "\n".join(lines) + "\n```"
 
 def get_chat_id():
     if CHAT_ID:
