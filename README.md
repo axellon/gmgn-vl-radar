@@ -1,6 +1,6 @@
-# GMGN V/L Radar Backup
+# GMGN V/L Radar
 
-Public backup for the Hermes `gmgn-dlmm-radar` no-agent cron.
+Public backup for GMGN RADAR `gmgn-dlmm-radar` no-agent cron.
 
 ## What it does
 
