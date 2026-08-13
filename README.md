@@ -1,6 +1,6 @@
 # GMGN V/L Radar Backup
 
-Private backup for the Hermes `gmgn-dlmm-radar` no-agent cron.
+Public backup for the Hermes `gmgn-dlmm-radar` no-agent cron.
 
 ## What it does
 
@@ -70,3 +70,41 @@ The installer copies the sanitized script and filter config. Recreate the Hermes
 - script: `gmgn-dlmm-radar.py`
 - no_agent: `true`
 - delivery: `local`
+
+## Example Telegram output
+
+The actual candidates and values change every run:
+
+```text
+GMGN V/L — 20:01 Bali
+
+SOLANA
+SYM         VOL    LIQ   V/L   FLOW  SWAP     MC
+--------------------------------------------------
+App        573k    78k   7.3   🧊0.5  5657   815k
+K-HOME     619k   337k   1.8   🧊0.4  4964   1.5M
+BOIÚNA     105k    84k   1.3   🔥2.4  1674   704k
+ORANGE      58k    87k   0.7   🧊0.1  2921   1.1M
+Dealer      47k   153k   0.3   🔥1.2  1627   3.3M
+
+V/L
+Volume 1h / liquidity.
+Makin tinggi = potensi fee makin cepat.
+Higher = faster potential fee velocity.
+
+FLOW
+🔥 panas   🟢 aktif   🟡 dingin   🧊 mati
+🔥 hot     🟢 active  🟡 cooling  🧊 cold
+
+ATURAN / RULE
+MAX HOLD 1 JAM / MAX HOLD 1 HOUR.
+Cuma get in, get out, lalu cari pool lain.
+Get in, get out, then rotate to next pool.
+```
+
+`FLOW` is calculated as `(last 5m volume × 12) / rolling 1h volume`:
+
+- `🔥 > 1.20`: accelerating / makin panas
+- `🟢 0.80–1.20`: active / aktif
+- `🟡 0.50–0.79`: cooling / mulai dingin
+- `🧊 < 0.50`: cold / dingin
