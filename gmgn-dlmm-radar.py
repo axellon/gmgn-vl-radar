@@ -136,17 +136,14 @@ def build():
     lines.extend([
         "",
         "V/L",
-        "Volume 1h / liquidity.",
-        "Makin tinggi = potensi fee makin cepat.",
+        "1h volume / liquidity.",
         "Higher = faster potential fee velocity.",
         "",
         "FLOW",
-        "🔥 panas   🟢 aktif   🟡 dingin   🧊 mati",
-        "🔥 hot     🟢 active  🟡 cooling  🧊 cold",
+        "🔥 hot   🟢 active   🟡 cooling   🧊 cold",
         "",
-        "ATURAN / RULE",
-        "MAX HOLD 1 JAM / MAX HOLD 1 HOUR.",
-        "Cuma get in, get out, lalu cari pool lain.",
+        "RULE",
+        "MAX HOLD 1 HOUR.",
         "Get in, get out, then rotate to next pool.",
     ])
     return "```\n" + "\n".join(lines) + "\n```"

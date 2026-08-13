@@ -92,17 +92,14 @@ ORANGE    58k   87k 0.7 🧊0.1 2921 1.1M
 Dealer    47k  153k 0.3 🔥1.2 1627 3.3M
 
 V/L
-Volume 1h / liquidity.
-Makin tinggi = potensi fee makin cepat.
+1h volume / liquidity.
 Higher = faster potential fee velocity.
 
 FLOW
-🔥 panas   🟢 aktif   🟡 dingin   🧊 mati
-🔥 hot     🟢 active  🟡 cooling  🧊 cold
+🔥 hot   🟢 active   🟡 cooling   🧊 cold
 
-ATURAN / RULE
-MAX HOLD 1 JAM / MAX HOLD 1 HOUR.
-Cuma get in, get out, lalu cari pool lain.
+RULE
+MAX HOLD 1 HOUR.
 Get in, get out, then rotate to next pool.
 ```
 
