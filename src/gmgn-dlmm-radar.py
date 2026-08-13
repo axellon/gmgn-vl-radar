@@ -75,7 +75,7 @@ def meteora_new_top():
         query = urllib.parse.urlencode({
             "category": "new",
             "page": 1,
-            "page_size": 1,
+            "page_size": 100,
             "timeframe": "24h",
             "filter_by": filters,
         })
@@ -85,7 +85,18 @@ def meteora_new_top():
         )
         with urllib.request.urlopen(req, timeout=15) as response:
             rows = json.load(response).get("data", [])
-        return rows[0] if rows else None
+        # Meteora's `new` category uses an internal ranking and ignores
+        # sort_by=pool_created_at:desc. Select the newest funded pool locally
+        # so a stale high-ranked token cannot occupy this slot for hours.
+        def funded_with_three_sol(row):
+            token_x = row.get("token_x") or {}
+            token_y = row.get("token_y") or {}
+            sol = token_x if token_x.get("symbol") == "SOL" else token_y
+            sol_price = float(sol.get("price") or 0)
+            return sol_price > 0 and float(row.get("tvl") or 0) >= 3 * sol_price
+
+        funded = [row for row in rows if funded_with_three_sol(row)]
+        return max(funded, key=lambda row: int(row.get("pool_created_at") or 0)) if funded else None
     except Exception:
         return None
 
