@@ -58,6 +58,24 @@ The default Solana scan uses:
 - Hermes Agent for the included scheduled-job setup
 - A Telegram bot token and target chat ID
 
+## Run locally without a VPS
+
+You do not need a VPS. Install Hermes Agent on Windows through WSL, or on a Linux or macOS computer, and run the radar locally with Telegram.
+
+The setup is simple:
+
+1. Install [Hermes Agent](https://hermes-agent.nousresearch.com/docs/).
+2. Install and configure GMGN CLI.
+3. Clone this repository and run `./install.sh`.
+4. Add your Telegram bot token and chat ID.
+5. Test the radar once, then add the Hermes cron.
+
+Your computer must stay turned on and connected to the internet for scheduled reports to keep running.
+
+The radar sends reports straight to Telegram every ten minutes. Hermes only handles the schedule. The cron uses `no_agent: true`, so it does not call an AI model or spend LLM tokens while running.
+
+Any inexpensive model is fine for the initial Hermes setup because the radar cron does not use it.
+
 ## Install
 
 ### 1. Install the radar
