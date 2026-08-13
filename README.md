@@ -72,7 +72,7 @@ The setup is simple:
 
 Your computer must stay turned on and connected to the internet for scheduled reports to keep running.
 
-The radar sends reports straight to Telegram every ten minutes. Hermes only handles the schedule. The cron uses `no_agent: true`, so it does not call an AI model or spend LLM tokens while running.
+The radar sends reports straight to Telegram every five minutes. Hermes only handles the schedule. The cron uses `no_agent: true`, so it does not call an AI model or spend LLM tokens while running.
 
 Any inexpensive model is fine for the initial Hermes setup because the radar cron does not use it.
 
@@ -169,12 +169,12 @@ Send one report immediately:
 python3 ~/.hermes/scripts/gmgn-dlmm-radar.py
 ```
 
-The included cron config runs every ten minutes with `no_agent: true`. The script sends directly to Telegram, so Hermes delivery remains local:
+The included cron config runs every five minutes with `no_agent: true`. The script sends directly to Telegram, so Hermes delivery remains local:
 
 ```json
 {
   "name": "gmgn-dlmm-radar",
-  "schedule": "*/10 * * * *",
+  "schedule": "*/5 * * * *",
   "script": "gmgn-dlmm-radar.py",
   "no_agent": true,
   "deliver": "local"
@@ -223,6 +223,6 @@ install.sh               local installer
 ## Notes
 
 - The report is a scanner, not an execution system.
-- FLOW is a five-minute signal against a one-hour baseline. A ten-minute schedule means a delivered message can age before the next run.
+- FLOW is a five-minute signal against a one-hour baseline. The report runs every five minutes.
 - Token symbols are display-only. Use the token address before acting on a result.
 - Maximum hold is an operating rule for this setup, not a guarantee of profit.

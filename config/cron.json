@@ -1,6 +1,6 @@
 {
   "name": "gmgn-dlmm-radar",
-  "schedule": "*/10 * * * *",
+  "schedule": "*/5 * * * *",
   "script": "gmgn-dlmm-radar.py",
   "no_agent": true,
   "deliver": "local",
