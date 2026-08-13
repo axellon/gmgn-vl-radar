@@ -27,6 +27,7 @@ RADAR_LOCATION = os.environ.get("RADAR_LOCATION", RADAR_TIMEZONE)
 CHAIN = "sol"
 LIMIT = 100
 
+
 # GMGN Trending provides the candidate set. Ranking happens locally by V/L.
 TREND_CMD = (
     "gmgn-cli market trending --chain sol --interval 1h --limit 100 "
@@ -59,12 +60,12 @@ def safe_for_dlmm(t):
 
 
 def flow_5m(t):
-    """Return (5m run-rate / rolling 1h volume, display label)."""
+    """Return volume FLOW plus five-minute swap acceleration."""
     address = t.get("address")
     chain = t.get("chain")
     vol_1h = float(t.get("volume") or 0)
     if not address or not chain or vol_1h <= 0:
-        return None, "-"
+        return None, "-", 0, 0, None
     now = int(time.time())
     cmd = [
         "gmgn-cli", "market", "kline", "--chain", chain,
@@ -75,15 +76,14 @@ def flow_5m(t):
         out = subprocess.run(cmd, capture_output=True, text=True, timeout=25).stdout
         candles = json.loads(out).get("list", [])[-5:]
         if not candles:
-            return None, "-"
+            return None, "-", 0, 0, None
         vol_5m = sum(float(c.get("volume") or 0) for c in candles)
         ratio = (vol_5m * 12) / vol_1h
         open_5m = float(candles[0].get("open") or 0)
         close_5m = float(candles[-1].get("close") or 0)
         price_change_5m = ((close_5m / open_5m) - 1) if open_5m > 0 else 0
 
-        # Fetch exact 5m directional volume. FLOW speed and direction must use
-        # the same horizon so old 1h activity cannot mask a current sell-off.
+        # Fetch exact five-minute directional volume and swap counts.
         info_cmd = [
             "gmgn-cli", "token", "info", "--chain", chain,
             "--address", address, "--raw",
@@ -94,6 +94,9 @@ def flow_5m(t):
         price_data = json.loads(info_out).get("price", {})
         buy_vol_5m = float(price_data.get("buy_volume_5m") or 0)
         sell_vol_5m = float(price_data.get("sell_volume_5m") or 0)
+        swaps_5m = int(float(price_data.get("swaps_5m") or 0))
+        swaps_1h = float(price_data.get("swaps_1h") or t.get("swaps") or 0)
+        swap_speed = (swaps_5m * 12 / swaps_1h) if swaps_1h > 0 else None
 
         # Require price and directional volume to agree. A 5% margin prevents
         # tiny buy/sell differences from being mislabeled directional.
@@ -112,9 +115,9 @@ def flow_5m(t):
             icon = "🟡"
         else:
             icon = "🧊"
-        return ratio, f"{icon}{direction}{ratio:.1f}"
+        return ratio, f"{icon}{direction}{ratio:.1f}", int(swaps_1h), swaps_5m, swap_speed
     except Exception:
-        return None, "-"
+        return None, "-", 0, 0, None
 
 def build():
     from datetime import datetime, timezone
@@ -126,6 +129,7 @@ def build():
         return (vol / liq if liq > 0 else 0, vol)
 
     sol_hits.sort(key=rank_key, reverse=True)
+
     try:
         local_tz = ZoneInfo(RADAR_TIMEZONE)
     except ZoneInfoNotFoundError:
@@ -145,21 +149,19 @@ def build():
         lines.append(title)
         # FLOW stays last because Telegram renders emoji at inconsistent widths.
         # Keeping text-only columns before it preserves mobile alignment.
-        lines.append(f"{'SYM':<7} {'VOL':>5} {'LIQ':>5}  {'V/L':>3} {'SWP':>4} {'MC':>5}  {'FLOW':>5}")
-        lines.append("-" * 42)
+        lines.append(f"{'SYM':<7} {'V/L':>4} {'S1H':>5} {'S5M':>4} {'S×':>4} {'MC':>5}  {'FLOW':>5}")
+        lines.append("-" * 44)
         if not hits:
             lines.append("none")
         for t in hits[:12]:
             sym = (t.get("symbol") or "?")[:7]
             vol_n = float(t.get('volume') or 0)
             liq_n = float(t.get('liquidity') or 0)
-            vol = money(vol_n)
-            liq = money(liq_n)
             vl = f"{vol_n/liq_n:.1f}" if liq_n > 0 else "-"
-            _, flow = flow_5m(t)
-            swaps = str(int(float(t.get('swaps') or 0)))
+            _, flow, swaps_1h, swaps_5m, swap_speed = flow_5m(t)
+            speed = f"{swap_speed:.1f}" if swap_speed is not None else "-"
             mc = money(t.get('market_cap'))
-            lines.append(f"{sym:<7} {vol:>5} {liq:>5}  {vl:>3} {swaps:>4} {mc:>5}  {flow:>5}")
+            lines.append(f"{sym:<7} {vl:>4} {swaps_1h:>5} {swaps_5m:>4} {speed:>4} {mc:>5}  {flow:>5}")
             lines.append("")
 
         # Remove the trailing blank after the last token.
@@ -172,6 +174,10 @@ def build():
         "V/L",
         "1h volume / liquidity.",
         "Higher = faster potential fee velocity.",
+        "",
+        "S×",
+        "(5m swaps × 12) / rolling 1h swaps.",
+        "≥1.3 accelerating   ≥2.0 explosive",
         "",
         "FLOW",
         "🔥 hot   🟢 active   🟡 cooling   🧊 cold",

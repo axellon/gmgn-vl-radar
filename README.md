@@ -183,23 +183,37 @@ The included cron config runs every five minutes with `no_agent: true`. The scri
 
 Use `config/cron.json` when creating the scheduled job.
 
+## Latest radar update
+
+The compact table now focuses on recent activity instead of showing raw volume and liquidity columns:
+
+- `S1H` shows total swaps during the rolling one-hour window.
+- `S5M` shows swaps during the latest five minutes.
+- `S×` compares current five-minute swap speed with the one-hour baseline.
+- `FLOW` still measures five-minute volume speed and direction.
+- `VOL` and `LIQ` were removed from the display to keep the report readable on a phone. Liquidity is still used by the minimum-liquidity gate and as the denominator in `V/L`.
+
 ## Output
 
 ```text
-GMGN V/L — 20:01 Bali
+GMGN V/L — 07:48 Bali
 
 SOLANA
-SYM       VOL   LIQ  V/L  SWP    MC   FLOW
-------------------------------------------
-App      573k   78k  7.3 5657  815k  🧊🔄0.5
+SYM      V/L   S1H  S5M   S×    MC   FLOW
+--------------------------------------------
+PLANSEM 12.7  5622  478  1.0  1.6M  🟢📉0.8
 
-K-HOME   619k  337k  1.8 4964  1.5M  🔥📉2.4
+cc       5.8  5590  427  0.9  1.4M  🟡📉0.8
 
-BOIÚNA   105k   84k  1.3 1674  704k  🔥📈1.6
+BOB      2.2  1652  266  1.9  235k  🔥📉2.4
 
 V/L
 1h volume / liquidity.
 Higher = faster potential fee velocity.
+
+S×
+(5m swaps × 12) / rolling 1h swaps.
+≥1.3 accelerating   ≥2.0 explosive
 
 FLOW
 🔥 hot   🟢 active   🟡 cooling   🧊 cold
@@ -209,6 +223,52 @@ RULE
 MAX HOLD 1 HOUR.
 Get in, get out, then rotate to next pool.
 ```
+
+## Reading the columns
+
+| Column | Meaning |
+| --- | --- |
+| `SYM` | Token symbol. Verify the contract address before acting because symbols are not unique. |
+| `V/L` | Rolling one-hour volume divided by current liquidity. A higher number means faster turnover relative to the available liquidity. |
+| `S1H` | Total swaps during the rolling one-hour window. This remains the quality baseline and filter. |
+| `S5M` | Total swaps during the latest five minutes. This shows what is happening now. |
+| `S×` | Swap acceleration: `(S5M × 12) / S1H`. `1.0` means the current pace matches the one-hour baseline, `1.3` or higher is accelerating, and `2.0` or higher is explosive. |
+| `MC` | Current token market cap. |
+| `FLOW` | Five-minute volume run rate versus rolling one-hour volume, followed by the current direction. |
+
+## FLOW symbols
+
+The first symbol shows volume speed:
+
+```text
+🔥  hot       above 1.2
+🟢  active    0.8 to 1.2
+🟡  cooling   0.5 to 0.8
+🧊  cold      below 0.5
+```
+
+The second symbol shows direction:
+
+```text
+📈  price is rising and buy volume is dominant
+📉  price is falling and sell volume is dominant
+🔄  mixed, flat, or price and volume do not agree
+```
+
+The number after the symbols is the FLOW ratio. For example, `🔥📈1.6` means five-minute volume is running at 1.6 times the one-hour baseline and the short-term direction is bullish.
+
+## Reading S× and FLOW together
+
+`S×` counts transaction acceleration. `FLOW` measures the amount of money moving and its direction. Use both:
+
+```text
+S× 1.6 + 🔥📈1.5   swaps and volume are accelerating bullishly
+S× 2.1 + 🔥📉2.4   heavy activity, but likely a sell-off rather than a buy signal
+S× 1.4 + 🧊🔄0.3   many small swaps without meaningful volume
+S× 0.5 + 🧊📈0.4   activity is slowing even if price is briefly rising
+```
+
+A high `S×` is not automatically bullish. Bot churn and panic selling can also create a large number of swaps.
 
 ## Files
 
