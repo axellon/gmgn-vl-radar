@@ -37,6 +37,8 @@ Secrets are intentionally excluded from Git. Create:
 ```env
 TG_BOT_TOKEN=your_telegram_bot_token
 TG_CHAT_ID=your_telegram_chat_id
+RADAR_TIMEZONE=UTC
+RADAR_LOCATION=UTC
 ```
 
 Protect it:
@@ -44,6 +46,15 @@ Protect it:
 ```bash
 chmod 600 ~/.config/gmgn-dlmm-radar/telegram.env
 ```
+
+Timezone examples:
+
+- Bali/WITA: `RADAR_TIMEZONE=Asia/Makassar`, `RADAR_LOCATION=Bali`
+- Jakarta/WIB: `RADAR_TIMEZONE=Asia/Jakarta`, `RADAR_LOCATION=Jakarta`
+- UTC: `RADAR_TIMEZONE=UTC`, `RADAR_LOCATION=UTC`
+- New York: `RADAR_TIMEZONE=America/New_York`, `RADAR_LOCATION=New_York`
+
+Use a valid IANA timezone name. If invalid, the script falls back to UTC.
 
 GMGN CLI must already be configured separately via `gmgn-cli config`.
 

@@ -3,6 +3,7 @@
 import json, subprocess, os, sys, time
 import urllib.request, urllib.parse
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 def load_private_env():
     env_path = Path.home() / ".config/gmgn-dlmm-radar/telegram.env"
@@ -15,6 +16,8 @@ def load_private_env():
 load_private_env()
 TOKEN = os.environ.get("TG_BOT_TOKEN", "")
 CHAT_ID = os.environ.get("TG_CHAT_ID", "")
+RADAR_TIMEZONE = os.environ.get("RADAR_TIMEZONE", "UTC")
+RADAR_LOCATION = os.environ.get("RADAR_LOCATION", RADAR_TIMEZONE)
 CHAIN = "sol"
 LIMIT = 100
 
@@ -82,7 +85,7 @@ def flow_5m(t):
         return None, "-"
 
 def build():
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timezone
     sol_hits = [t for t in gather(TREND_CMD) if safe_for_dlmm(t)]
 
     def rank_key(t):
@@ -91,8 +94,12 @@ def build():
         return (vol / liq if liq > 0 else 0, vol)
 
     sol_hits.sort(key=rank_key, reverse=True)
-    bali = (datetime.now(timezone.utc) + timedelta(hours=8)).strftime("%H:%M")
-    lines = [f"GMGN V/L — {bali} Bali", ""]
+    try:
+        local_tz = ZoneInfo(RADAR_TIMEZONE)
+    except ZoneInfoNotFoundError:
+        local_tz = timezone.utc
+    local_time = datetime.now(local_tz).strftime("%H:%M")
+    lines = [f"GMGN V/L — {local_time} {RADAR_LOCATION}", ""]
 
     def money(v):
         v = float(v or 0)
