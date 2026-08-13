@@ -26,7 +26,6 @@ RADAR_TIMEZONE = os.environ.get("RADAR_TIMEZONE", "UTC")
 RADAR_LOCATION = os.environ.get("RADAR_LOCATION", RADAR_TIMEZONE)
 CHAIN = "sol"
 LIMIT = 100
-METEORA_NEW_API = "https://pool-discovery-api.datapi.meteora.ag/pools"
 
 # GMGN Trending provides the candidate set. Ranking happens locally by V/L.
 TREND_CMD = (
@@ -57,37 +56,6 @@ def gather(cmd=TREND_CMD):
 def safe_for_dlmm(t):
     """Solana safety gate: reject detected wash trading only."""
     return t.get("is_wash_trading") is not True
-
-
-def meteora_new_top():
-    """Mirror Preset 2's visible New Tokens filters and return row #1."""
-    try:
-        newest_token_ms = int(time.time() * 1000) - (200 * 60 * 60 * 1000)
-        filters = "&&".join([
-            "base_token_has_critical_warnings=false",
-            "quote_token_has_critical_warnings=false",
-            "base_token_organic_score>=50",
-            "quote_token_organic_score>=50",
-            f"base_token_created_at>={newest_token_ms}",
-            "base_token_holders>=1000",
-            "pool_type=dlmm",
-        ])
-        query = urllib.parse.urlencode({
-            "category": "new",
-            "page": 1,
-            "page_size": 1,
-            "timeframe": "24h",
-            "filter_by": filters,
-        })
-        req = urllib.request.Request(
-            f"{METEORA_NEW_API}?{query}",
-            headers={"User-Agent": "gmgn-vl-radar/1.0"},
-        )
-        with urllib.request.urlopen(req, timeout=15) as response:
-            rows = json.load(response).get("data", [])
-        return rows[0] if rows else None
-    except Exception:
-        return None
 
 
 def flow_5m(t):
@@ -158,7 +126,6 @@ def build():
         return (vol / liq if liq > 0 else 0, vol)
 
     sol_hits.sort(key=rank_key, reverse=True)
-    meteora_top = meteora_new_top()
     try:
         local_tz = ZoneInfo(RADAR_TIMEZONE)
     except ZoneInfoNotFoundError:
@@ -200,33 +167,6 @@ def build():
             lines.pop()
 
     add_section("SOLANA", sol_hits)
-    lines.extend(["", "METEORA NEW #1"])
-    lines.append(f"{'PAIR':<9} {'MC':>5} {'VOL':>5} {'TVL':>5} {'FEE':>5}")
-    lines.append("-" * 33)
-    if meteora_top:
-        now_ms = int(time.time() * 1000)
-
-        def age(value):
-            seconds = max(0, (now_ms - int(value or now_ms)) // 1000)
-            hours, minutes = divmod(seconds // 60, 60)
-            return f"{hours}h{minutes:02d}" if hours else f"{minutes}m"
-
-        token_x = meteora_top.get("token_x") or {}
-        token_y = meteora_top.get("token_y") or {}
-        base = token_y if token_x.get("symbol") in {"SOL", "USDC", "USDT"} else token_x
-        pair = (meteora_top.get("name") or "?")[:9]
-        lines.append(
-            f"{pair:<9} {money(base.get('market_cap')):>5} "
-            f"{money(meteora_top.get('volume')):>5} "
-            f"{money(meteora_top.get('tvl')):>5} "
-            f"{money(meteora_top.get('fee')):>5}"
-        )
-        lines.append(
-            f"AGE token {age(base.get('created_at'))} | "
-            f"pool {age(meteora_top.get('pool_created_at'))}"
-        )
-    else:
-        lines.append("unavailable")
     lines.extend([
         "",
         "V/L",

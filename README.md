@@ -2,8 +2,6 @@
 
 A small Solana pool scanner built around GMGN market data. It ranks active pools by hourly volume relative to liquidity, adds a short-term flow reading, and posts the result to Telegram.
 
-The same report also shows the first DLMM row from Meteora's **Discover > New Tokens** page, including market cap, volume, TVL, fees, token age, and pool age.
-
 The script is meant for quick DLMM rotation. It does not place trades or touch a wallet.
 
 ## How it works
@@ -199,12 +197,6 @@ K-HOME   619k  337k  1.8 4964  1.5M  🔥📉2.4
 
 BOIÚNA   105k   84k  1.3 1674  704k  🔥📈1.6
 
-METEORA NEW #1
-PAIR         MC   VOL   TVL   FEE
----------------------------------
-CGOD-SOL    31k     0     0     0
-AGE token 18m | pool 18m
-
 V/L
 1h volume / liquidity.
 Higher = faster potential fee velocity.
@@ -231,7 +223,6 @@ install.sh               local installer
 ## Notes
 
 - The report is a scanner, not an execution system.
-- `METEORA NEW #1` mirrors the current first row under Meteora Discover > New Tokens with the DLMM filter selected.
 - FLOW is a five-minute signal against a one-hour baseline. The report runs every five minutes.
 - Token symbols are display-only. Use the token address before acting on a result.
 - Maximum hold is an operating rule for this setup, not a guarantee of profit.
