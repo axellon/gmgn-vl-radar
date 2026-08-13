@@ -5,7 +5,7 @@ Private backup for the Hermes `gmgn-dlmm-radar` no-agent cron.
 ## What it does
 
 - Runs every 10 minutes through Hermes cron.
-- Fetches GMGN trending candidates for Solana and Robinhood Chain.
+- Fetches GMGN trending candidates for Solana.
 - Ranks each chain by rolling 1-hour `volume / liquidity` (V/L).
 - Shows a compact `FLOW` signal: `(last 5m volume × 12) / rolling 1h volume`.
 - Sends the report directly to Telegram, avoiding the Hermes cron wrapper.
@@ -27,19 +27,6 @@ Private backup for the Hermes `gmgn-dlmm-radar` no-agent cron.
 - not wash trading
 - creator close is **not required**
 
-### Robinhood Chain
-
-- interval: 1h
-- liquidity >= $1,000
-- holders >= 200
-- age >= 1h
-- gas fee >= 20
-- smart degen >= 3
-- swaps >= 500
-- market cap >= $100,000
-- has social
-- not wash trading
-- creator close required
 
 ## Secret setup
 

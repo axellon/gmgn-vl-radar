@@ -28,16 +28,6 @@ TREND_CMD = (
     "--min-marketcap 100000"
 )
 
-# Same screen for Robinhood Chain; displayed separately because these are
-# EVM/Uniswap-style pools, not Meteora DLMM pools.
-ROBINHOOD_CMD = (
-    "gmgn-cli market trending --chain robinhood --interval 1h --limit 100 "
-    "--order-by volume --direction desc "
-    "--filter creator_close --filter has_social --filter not_wash_trading "
-    "--min-liquidity 1000 --min-holder-count 200 --min-created 1h "
-    "--min-gas-fee 20 --min-smart-degen-count 3 --min-swaps 500 "
-    "--min-marketcap 100000"
-)
 
 def run(cmd):
     try:
@@ -58,12 +48,6 @@ def safe_for_dlmm(t):
     """Solana safety gate: reject detected wash trading only."""
     return t.get("is_wash_trading") is not True
 
-def safe_for_robinhood(t):
-    """Robinhood keeps its existing creator-close and non-wash gate."""
-    return (
-        t.get("creator_close") is True
-        and t.get("is_wash_trading") is not True
-    )
 
 def flow_5m(t):
     """Return (5m run-rate / rolling 1h volume, display label)."""
@@ -100,7 +84,6 @@ def flow_5m(t):
 def build():
     from datetime import datetime, timezone, timedelta
     sol_hits = [t for t in gather(TREND_CMD) if safe_for_dlmm(t)]
-    rh_hits = [t for t in gather(ROBINHOOD_CMD) if safe_for_robinhood(t)]
 
     def rank_key(t):
         vol = float(t.get("volume") or 0)
@@ -108,7 +91,6 @@ def build():
         return (vol / liq if liq > 0 else 0, vol)
 
     sol_hits.sort(key=rank_key, reverse=True)
-    rh_hits.sort(key=rank_key, reverse=True)
     bali = (datetime.now(timezone.utc) + timedelta(hours=8)).strftime("%H:%M")
     lines = [f"GMGN V/L — {bali} Bali", ""]
 
@@ -139,8 +121,6 @@ def build():
             lines.append(f"{sym:<8} {vol:>6} {liq:>6} {vl:>5} {flow:>6} {swaps:>5} {mc:>6}")
 
     add_section("SOLANA", sol_hits)
-    lines.append("")
-    add_section("ROBINHOOD", rh_hits)
     return "```\n" + "\n".join(lines) + "\n```"
 
 def get_chat_id():
