@@ -225,10 +225,6 @@ def build():
             f"AGE token {age(base.get('created_at'))} | "
             f"pool {age(meteora_top.get('pool_created_at'))}"
         )
-        pool_address = meteora_top.get("pool_address") or "?"
-        lines.append(
-            f"CHECK {local_time} | POOL {pool_address[:4]}…{pool_address[-4:]}"
-        )
     else:
         lines.append("unavailable")
     lines.extend([
