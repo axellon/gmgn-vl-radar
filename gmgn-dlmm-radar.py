@@ -111,12 +111,12 @@ def build():
 
     def add_section(title, hits):
         lines.append(title)
-        lines.append(f"{'SYM':<8} {'VOL':>6} {'LIQ':>6} {'V/L':>5} {'FLOW':>6} {'SWAP':>5} {'MC':>6}")
-        lines.append("-" * 50)
+        lines.append(f"{'SYM':<6} {'VOL':>4} {'LIQ':>4} {'V/L':>3} {'FLOW':>4} {'SWP':>4} {'MC':>4}")
+        lines.append("-" * 35)
         if not hits:
             lines.append("kosong")
         for t in hits[:12]:
-            sym = (t.get("symbol") or "?")[:8]
+            sym = (t.get("symbol") or "?")[:6]
             vol_n = float(t.get('volume') or 0)
             liq_n = float(t.get('liquidity') or 0)
             vol = money(vol_n)
@@ -125,7 +125,7 @@ def build():
             _, flow = flow_5m(t)
             swaps = str(int(float(t.get('swaps') or 0)))
             mc = money(t.get('market_cap'))
-            lines.append(f"{sym:<8} {vol:>6} {liq:>6} {vl:>5} {flow:>6} {swaps:>5} {mc:>6}")
+            lines.append(f"{sym:<6} {vol:>4} {liq:>4} {vl:>3} {flow:>4} {swaps:>4} {mc:>4}")
 
     add_section("SOLANA", sol_hits)
     lines.extend([
