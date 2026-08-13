@@ -126,6 +126,11 @@ def build():
             swaps = str(int(float(t.get('swaps') or 0)))
             mc = money(t.get('market_cap'))
             lines.append(f"{sym:<7} {vol:>5} {liq:>5} {vl:>3} {flow:>4} {swaps:>4} {mc:>4}")
+            lines.append("")
+
+        # Remove the trailing blank after the last token.
+        if hits and lines[-1] == "":
+            lines.pop()
 
     add_section("SOLANA", sol_hits)
     lines.extend([

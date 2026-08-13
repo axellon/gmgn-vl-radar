@@ -82,9 +82,13 @@ SOLANA
 SYM       VOL   LIQ V/L FLOW  SWP   MC
 --------------------------------------
 App      573k   78k 7.3 🧊0.5 5657 815k
+
 K-HOME   619k  337k 1.8 🧊0.4 4964 1.5M
+
 BOIÚNA   105k   84k 1.3 🔥2.4 1674 704k
+
 ORANGE    58k   87k 0.7 🧊0.1 2921 1.1M
+
 Dealer    47k  153k 0.3 🔥1.2 1627 3.3M
 
 V/L
