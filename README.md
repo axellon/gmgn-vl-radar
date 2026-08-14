@@ -265,6 +265,44 @@ S× 0.5 + 🧊📈0.4   activity is slowing even if price is briefly rising
 
 A high `S×` is not automatically bullish. Bot churn and panic selling can also create a large number of swaps.
 
+## Busy swaps, cold FLOW, and bearish direction
+
+A busy `S5M` does not automatically mean fresh buying momentum. When swaps stay active but FLOW is cold and points down, the pool may be processing many small trades while nominal volume is fading and sell pressure remains dominant.
+
+This is not a momentum entry signal. Treat it as a directional setup that still needs confirmation from the chart, liquidity, and pair orientation.
+
+### Possible DLMM setup
+
+If the bearish direction remains intact, a single-sided Bid-Ask or Curve distribution may be placed below the current price for the expected downward move.
+
+The exact side depends on:
+
+- which token is base and which is quote;
+- which asset is deposited;
+- where the bins sit relative to the active price;
+- which asset the position is expected to convert into.
+
+Do not assume that Bid-Ask or Curve is automatically bearish. Check the pair orientation and preview the expected inventory conversion before opening the position.
+
+### Operating rules
+
+- Use `S5M` as proof of activity, not as a bullish signal.
+- Confirm that FLOW remains cold and the short-term direction remains bearish.
+- Check the chart for continued lower highs, weak rebounds, or persistent sell pressure.
+- Build the range below the current price. Do not chase price before it reaches the range.
+- Wait for price to enter the selected range before treating the setup as active.
+- Exit early if price reverses, buy pressure returns, or the bearish thesis fails.
+- Hold for no longer than one hour under this rotation strategy.
+- Close the position after the rotation and move to the next suitable pool.
+
+### Risks
+
+Busy swaps can come from bots or many small transactions. They do not guarantee useful fee volume.
+
+If price keeps falling, a single-sided position can convert into an unwanted token and continue losing value. A range may also remain untouched, move out of range quickly, or produce too little fee income to cover slippage and execution costs.
+
+Check liquidity, token quality, slippage, pair orientation, and expected inventory conversion before entering. The one-hour limit is a discipline rule for this setup, not protection against loss.
+
 ## High-momentum example
 
 The radar can also be used to find short, high-momentum bursts. The screenshot below shows BUDDY appearing in the 10:01 AM report with:
