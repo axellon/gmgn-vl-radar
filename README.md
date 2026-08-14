@@ -190,6 +190,7 @@ The compact table now focuses on recent activity instead of showing raw volume a
 - The minimum token age was reduced from one hour to 30 minutes.
 - The rolling one-hour swap gate was reduced from 1,500 to 500 swaps.
 - These two discovery changes allow younger accelerating pools to enter the radar before their early activity cools down. All other eligibility gates and the one-hour `V/L` ranking stay unchanged.
+- A hard application-side `S5M ≥ 200` gate now removes candidates that do not record at least 200 swaps in the latest five minutes. The scanner checks exact token data and continues through the ranked universe until it finds up to 12 qualifying rows.
 - `S1H` shows total swaps during the rolling one-hour window.
 - `S5M` shows swaps during the latest five minutes.
 - `S×` compares current five-minute swap speed with the one-hour baseline.
@@ -236,7 +237,7 @@ Get in, get out, then rotate to next pool.
 | `SYM` | Token symbol. Verify the contract address before acting because symbols are not unique. |
 | `V/L` | Rolling one-hour volume divided by current liquidity. A higher number means faster turnover relative to the available liquidity. |
 | `S1H` | Total swaps during the rolling one-hour window. This remains the quality baseline and filter. |
-| `S5M` | Total swaps during the latest five minutes. This shows what is happening now. |
+| `S5M` | Total swaps during the latest five minutes. This shows what is happening now. Rows below 200 are excluded from the report. |
 | `S×` | Swap acceleration: `(S5M × 12) / S1H`. `1.0` means the current pace matches the one-hour baseline, `1.3` or higher is accelerating, and `2.0` or higher is explosive. |
 | `MC` | Current token market cap. |
 | `FLOW` | Five-minute volume run rate versus rolling one-hour volume, followed by the current direction. |
@@ -317,5 +318,6 @@ install.sh               local installer
 
 - The report is a scanner, not an execution system.
 - FLOW is a five-minute signal against a one-hour baseline. The report runs every five minutes.
+- `S5M ≥ 200` is a hard output gate. It favors immediately active pools and can intentionally exclude slower early-stage moves.
 - Token symbols are display-only. Use the token address before acting on a result.
 - Maximum hold is an operating rule for this setup, not a guarantee of profit.
