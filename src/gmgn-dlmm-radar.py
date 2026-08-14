@@ -26,7 +26,6 @@ RADAR_TIMEZONE = os.environ.get("RADAR_TIMEZONE", "UTC")
 RADAR_LOCATION = os.environ.get("RADAR_LOCATION", RADAR_TIMEZONE)
 CHAIN = "sol"
 LIMIT = 100
-MIN_SWAPS_5M = 200
 
 
 # GMGN Trending provides the candidate set. Ranking happens locally by V/L.
@@ -152,28 +151,21 @@ def build():
         # Keeping text-only columns before it preserves mobile alignment.
         lines.append(f"{'SYM':<7} {'V/L':>4} {'S1H':>5} {'S5M':>4} {'S×':>4} {'MC':>5}  {'FLOW':>5}")
         lines.append("-" * 44)
-        shown = 0
-        for t in hits:
+        if not hits:
+            lines.append("none")
+        for t in hits[:12]:
             sym = (t.get("symbol") or "?")[:7]
             vol_n = float(t.get('volume') or 0)
             liq_n = float(t.get('liquidity') or 0)
             vl = f"{vol_n/liq_n:.1f}" if liq_n > 0 else "-"
             _, flow, swaps_1h, swaps_5m, swap_speed = flow_5m(t)
-            if swaps_5m < MIN_SWAPS_5M:
-                continue
             speed = f"{swap_speed:.1f}" if swap_speed is not None else "-"
             mc = money(t.get('market_cap'))
             lines.append(f"{sym:<7} {vl:>4} {swaps_1h:>5} {swaps_5m:>4} {speed:>4} {mc:>5}  {flow:>5}")
             lines.append("")
-            shown += 1
-            if shown >= 12:
-                break
-
-        if shown == 0:
-            lines.append("none")
 
         # Remove the trailing blank after the last token.
-        if shown and lines[-1] == "":
+        if hits and lines[-1] == "":
             lines.pop()
 
     add_section("SOLANA", sol_hits)
@@ -186,7 +178,6 @@ def build():
         "S×",
         "(5m swaps × 12) / rolling 1h swaps.",
         "≥1.3 accelerating   ≥2.0 explosive",
-        f"Gate: S5M ≥{MIN_SWAPS_5M}",
         "",
         "FLOW",
         "🔥 hot   🟢 active   🟡 cooling   🧊 cold",
