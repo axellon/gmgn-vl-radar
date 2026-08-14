@@ -33,8 +33,8 @@ TREND_CMD = (
     "gmgn-cli market trending --chain sol --interval 1h --limit 100 "
     "--order-by volume --direction desc "
     "--filter has_social --filter not_wash_trading "
-    "--min-liquidity 2500 --min-holder-count 200 --min-created 1h "
-    "--min-gas-fee 20 --min-smart-degen-count 2 --min-swaps 1500 "
+    "--min-liquidity 2500 --min-holder-count 200 --min-created 30m "
+    "--min-gas-fee 20 --min-smart-degen-count 2 --min-swaps 500 "
     "--min-marketcap 100000"
 )
 

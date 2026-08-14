@@ -34,7 +34,7 @@
   "min_liquidity": "2500",
   "min_holder_count": "200",
   "not_wash_trading": "1",
-  "min_created": "1",
+  "min_created": "0.5",
   "min_gas_fee": "20",
   "sol_sol": "1",
   "sol_usdc": "1",
@@ -90,7 +90,7 @@
   "xlayer_rwa": "1",
   "stoxes": "0",
   "min_smart_degen_count": "2",
-  "min_swaps": "1500",
+  "min_swaps": "500",
   "frozen": "0",
   "min_marketcap": "100000",
   "swarms": "0"

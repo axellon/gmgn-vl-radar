@@ -187,11 +187,16 @@ Use `config/cron.json` when creating the scheduled job.
 
 The compact table now focuses on recent activity instead of showing raw volume and liquidity columns:
 
+- The minimum token age was reduced from one hour to 30 minutes.
+- The rolling one-hour swap gate was reduced from 1,500 to 500 swaps.
+- These two discovery changes allow younger accelerating pools to enter the radar before their early activity cools down. All other eligibility gates and the one-hour `V/L` ranking stay unchanged.
 - `S1H` shows total swaps during the rolling one-hour window.
 - `S5M` shows swaps during the latest five minutes.
 - `S×` compares current five-minute swap speed with the one-hour baseline.
 - `FLOW` still measures five-minute volume speed and direction.
 - `VOL` and `LIQ` were removed from the display to keep the report readable on a phone. Liquidity is still used by the minimum-liquidity gate and as the denominator in `V/L`.
+
+The broader gates increase coverage, not certainty. Use `S×` together with `FLOW` to separate an accelerating bullish pool from bot churn or a fast sell-off.
 
 ## Output
 
