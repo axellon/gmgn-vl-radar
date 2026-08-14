@@ -331,6 +331,19 @@ get out and rotate to the next pool
 
 The screenshot is an example, not a performance guarantee. Market cap doubling does not guarantee that every position receives the same return. Entry timing, exit timing, liquidity, slippage, and fees all affect the result. The radar surfaces activity; it does not place trades or decide exits.
 
+## Entry discipline
+
+The core rule: do not enter the token side at the current price. A hot `V/L` or busy `S5M` is a liquidity reading, not a reason to buy. If the goal is to accumulate lower, a spot limit order is usually the cleaner choice. It avoids inventory conversion and extra execution costs, and it does the same job when price arrives.
+
+A few habits that keep the radar useful instead of expensive:
+
+- Never buy the token side at the current price just because the board looks active.
+- For a simple "buy lower" goal, place a spot limit order rather than a DLMM range.
+- If you still want DLMM, use a single-sided bid under the price and wait for price to reach it. Do not chase the level early.
+- Use DLMM single-sided bids only when price is expected to enter the range and chop there, so the position earns fees on top of the accumulation. A range placed far from the market just sits empty and earns nothing.
+- Watch the pool size. A tiny pool, even with a high `V/L`, can pay fees too small to matter after slippage and gas.
+- Exit when the thesis breaks, not when the position is merely underwater. Being down is not a reason to add; a dead range is.
+
 ## Files
 
 ```text
