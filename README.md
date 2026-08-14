@@ -33,7 +33,7 @@ Speed labels:
 
 A hot reading measures activity, not safety. `🔥📉` usually means an active sell-off.
 
-The main boards show up to ten rows per chain. Rows are kept tight so both chains remain readable in one Telegram message.
+The main boards show up to five rows per chain. Rows are kept tight so both chains remain readable in one Telegram message.
 
 ## Filters
 
@@ -76,7 +76,7 @@ The setup is simple:
 
 Your computer must stay turned on and connected to the internet for scheduled reports to keep running.
 
-The radar sends reports straight to Telegram every five minutes. Hermes only handles the schedule. The cron uses `no_agent: true`, so it does not call an AI model or spend LLM tokens while running.
+The radar sends reports straight to Telegram every ten minutes. Hermes only handles the schedule. The cron uses `no_agent: true`, so it does not call an AI model or spend LLM tokens while running. The slower cadence leaves more room to read the board and act on it instead of reacting to every tick.
 
 Any inexpensive model is fine for the initial Hermes setup because the radar cron does not use it.
 
@@ -173,12 +173,12 @@ Send one report immediately:
 python3 ~/.hermes/scripts/gmgn-dlmm-radar.py
 ```
 
-The included cron config runs every five minutes with `no_agent: true`. The script sends directly to Telegram, so Hermes delivery remains local:
+The included cron config runs every ten minutes with `no_agent: true`. The script sends directly to Telegram, so Hermes delivery remains local:
 
 ```json
 {
   "name": "gmgn-dlmm-radar",
-  "schedule": "*/5 * * * *",
+  "schedule": "*/10 * * * *",
   "script": "gmgn-dlmm-radar.py",
   "no_agent": true,
   "deliver": "local"
@@ -189,7 +189,7 @@ Use `config/cron.json` when creating the scheduled job.
 
 ## Latest radar update
 
-The report covers Robinhood alongside Solana. Both chains use GMGN Trending and the same `V/L`, swap, market-cap, and FLOW calculations. Each board stops at ten rows, and the blank lines between tokens are gone so the report fits more comfortably on a phone.
+The report covers Robinhood alongside Solana. Both chains use GMGN Trending and the same `V/L`, swap, market-cap, and FLOW calculations. Each board stops at five rows, and the blank lines between tokens are gone so the report fits more comfortably on a phone.
 
 Robinhood keeps the useful activity gates but skips Solana's `min-gas-fee 20` filter. During testing, that filter cut the Robinhood universe from 100 names to 27 and removed active runners such as DJT. Gas values are not directly comparable across the two chains.
 
@@ -345,7 +345,7 @@ install.sh               local installer
 ## Notes
 
 - The report is a scanner, not an execution system.
-- FLOW is a five-minute signal against a one-hour baseline. The report runs every five minutes.
-- Each chain's board shows at most ten rows.
+- FLOW is a five-minute signal against a one-hour baseline. The report runs every ten minutes so a fresh board does not push you into overtrading.
+- Each chain's board shows at most five rows.
 - Token symbols are display-only. Use the token address before acting on a result.
 - Maximum hold is an operating rule for this setup, not a guarantee of profit.

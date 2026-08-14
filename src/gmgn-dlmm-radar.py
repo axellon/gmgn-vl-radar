@@ -163,7 +163,7 @@ def build():
 
     sol_hits.sort(key=rank_key, reverse=True)
     robinhood_hits.sort(key=rank_key, reverse=True)
-    price_by_address = token_price_map(sol_hits + robinhood_hits)
+    price_by_address = token_price_map(sol_hits[:10] + robinhood_hits[:10])
 
     def snapshot_for(t):
         return price_by_address.get((t.get("chain"), t.get("address")))
@@ -191,7 +191,7 @@ def build():
         lines.append("-" * 44)
         if not hits:
             lines.append("none")
-        for t in hits[:10]:
+        for t in hits[:5]:
             sym = (t.get("symbol") or "?")[:7]
             vol_n = float(t.get('volume') or 0)
             liq_n = float(t.get('liquidity') or 0)
@@ -207,47 +207,6 @@ def build():
     lines.append("")
     add_section("ROBINHOOD", robinhood_hits)
 
-    def add_spike_section(title, hits):
-        spike_rows = []
-        for t in hits:
-            price_data = snapshot_for(t) or {}
-            vol_1h = float(price_data.get("volume_1h") or t.get("volume") or 0)
-            vol_5m = float(price_data.get("volume_5m") or 0)
-            swaps_1h = float(price_data.get("swaps_1h") or t.get("swaps") or 0)
-            swaps_5m = int(float(price_data.get("swaps_5m") or 0))
-            current_price = float(price_data.get("price") or t.get("price") or 0)
-            price_5m = float(price_data.get("price_5m") or 0)
-            buy_vol_5m = float(price_data.get("buy_volume_5m") or 0)
-            sell_vol_5m = float(price_data.get("sell_volume_5m") or 0)
-            flow = (vol_5m * 12 / vol_1h) if vol_1h > 0 else 0
-            swap_speed = (swaps_5m * 12 / swaps_1h) if swaps_1h > 0 else 0
-            change_5m = ((current_price / price_5m) - 1) * 100 if price_5m > 0 else 0
-            buy_share = (
-                buy_vol_5m / (buy_vol_5m + sell_vol_5m)
-                if buy_vol_5m + sell_vol_5m > 0 else 0
-            )
-            bullish = change_5m > 1 and buy_vol_5m > sell_vol_5m * 1.05
-            if swap_speed >= 1.3 and flow >= 1.2 and bullish and buy_share >= 0.55:
-                stage = "E" if change_5m <= 12 else ("R" if change_5m <= 20 else "L")
-                spike_rows.append((flow * swap_speed, t, swaps_5m, swap_speed, flow, change_5m, stage))
-
-        spike_rows.sort(key=lambda row: row[0], reverse=True)
-        lines.extend(["", title])
-        lines.append(f"{'SYM':<7} {'S5M':>3} {'S×':>3} {'MC':>4} {'5M':>6} {'ST':>2}  {'FLOW':>5}")
-        lines.append("-" * 40)
-        if not spike_rows:
-            lines.append("none")
-        for _, t, swaps_5m, swap_speed, flow, change_5m, stage in spike_rows[:6]:
-            sym = (t.get("symbol") or "?")[:7]
-            mc = money(t.get("market_cap"))
-            icon = "🔥" if flow > 1.20 else "🟢"
-            lines.append(
-                f"{sym:<7} {swaps_5m:>3} {swap_speed:>3.1f} {mc:>4} "
-                f"{change_5m:>+5.1f}% {stage:>2}  {icon}📈{flow:.1f}"
-            )
-
-    add_spike_section("SOLANA SPIKE", sol_hits)
-    add_spike_section("ROBINHOOD SPIKE", robinhood_hits)
     lines.extend([
         "",
         "V/L",
@@ -261,9 +220,6 @@ def build():
         "FLOW",
         "🔥 hot   🟢 active   🟡 cooling   🧊 cold",
         "📈 bullish  📉 bearish  🔄 mixed/chop",
-        "",
-        "ST",
-        "E early   R running   L late",
         "",
         "RULE",
         "MAX HOLD 1 HOUR.",
