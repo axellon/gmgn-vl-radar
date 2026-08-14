@@ -33,7 +33,7 @@ Speed labels:
 
 A hot reading measures activity, not safety. `🔥📉` usually means an active sell-off.
 
-The main boards show up to ten rows per chain. Separate spike boards scan the full eligible universe rather than only the top ten `V/L` rows. This catches short bursts that would otherwise sit below the visible cutoff.
+The main boards show up to ten rows per chain. Rows are kept tight so both chains remain readable in one Telegram message.
 
 ## Filters
 
@@ -189,22 +189,11 @@ Use `config/cron.json` when creating the scheduled job.
 
 ## Latest radar update
 
-The report now covers Robinhood alongside Solana. Both chains use GMGN Trending and the same `V/L`, swap, market-cap, and FLOW calculations. Each main board stops at ten rows, and the blank lines between tokens are gone so the report fits more comfortably on a phone.
+The report covers Robinhood alongside Solana. Both chains use GMGN Trending and the same `V/L`, swap, market-cap, and FLOW calculations. Each board stops at ten rows, and the blank lines between tokens are gone so the report fits more comfortably on a phone.
 
 Robinhood keeps the useful activity gates but skips Solana's `min-gas-fee 20` filter. During testing, that filter cut the Robinhood universe from 100 names to 27 and removed active runners such as DJT. Gas values are not directly comparable across the two chains.
 
-There is also a spike board for each chain. It scans every eligible candidate with exact GMGN token data and looks for all four conditions at once:
-
-```text
-S×             at least 1.3
-FLOW           at least 1.2
-5m direction   bullish
-5m buy volume  at least 55%
-```
-
-`S5M` stays visible but is not a hard gate. A 200-swap minimum was tested and rolled back because it hid early moves that had strong normalized acceleration.
-
-The spike scan uses four bounded workers and reuses those token snapshots in the main boards. It does not call an AI model.
+The separate momentum callout tables were removed. The report now sticks to the two ranked data boards. `S5M`, `S×`, and `FLOW` remain visible as measurements, but the report does not label a token as an entry.
 
 ## Output
 
@@ -224,19 +213,6 @@ SYM      V/L   S1H  S5M   S×    MC   FLOW
 HOTDOG  16.0  4486  653  1.7  127k  🔥📉1.6
 DJT     13.3 20098  343  0.2  582k  🧊📉0.3
 GTAVI   10.2  3757  409  1.3  258k  🔥🔄1.4
-
-SOLANA SPIKE
-SYM     S5M  S×   MC     5M ST   FLOW
-----------------------------------------
-KNEWIT  300 4.3 725k +22.8%  L  🔥📈5.2
-
-ROBINHOOD SPIKE
-SYM     S5M  S×   MC     5M ST   FLOW
-----------------------------------------
-none
-
-ST
-E early   R running   L late
 
 RULE
 MAX HOLD 1 HOUR.
@@ -289,18 +265,6 @@ S× 0.5 + 🧊📈0.4   activity is slowing even if price is briefly rising
 
 A high `S×` is not automatically bullish. Bot churn and panic selling can also create a large number of swaps.
 
-## Spike board
-
-The spike board is sorted by combined swap and volume acceleration. It does not replace the `V/L` ranking above it. `ST` is a rough timing label based on the five-minute market-cap move:
-
-```text
-E  early     +1% to +12%
-R  running   above +12% to +20%
-L  late      above +20%
-```
-
-These labels describe where a move was detected. They are not entry or exit instructions. A late row can keep running, and an early row can reverse immediately.
-
 ## High-momentum example
 
 The radar can also be used to find short, high-momentum bursts. The screenshot below shows BUDDY appearing in the 10:01 AM report with:
@@ -344,6 +308,6 @@ install.sh               local installer
 
 - The report is a scanner, not an execution system.
 - FLOW is a five-minute signal against a one-hour baseline. The report runs every five minutes.
-- Each chain's main board shows at most ten rows. Each spike board shows at most six.
+- Each chain's board shows at most ten rows.
 - Token symbols are display-only. Use the token address before acting on a result.
 - Maximum hold is an operating rule for this setup, not a guarantee of profit.
