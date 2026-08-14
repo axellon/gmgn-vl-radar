@@ -1,0 +1,15 @@
+{
+  "chain": "robinhood",
+  "interval": "1h",
+  "limit": 100,
+  "order_by": "volume",
+  "direction": "desc",
+  "min_liquidity": 2500,
+  "min_holder_count": 200,
+  "min_created": "30m",
+  "min_smart_degen_count": 2,
+  "min_swaps": 500,
+  "min_marketcap": 100000,
+  "min_gas_fee": null,
+  "note": "Robinhood intentionally does not reuse Solana's minimum gas-fee gate because GMGN reports gas on a different scale for this chain."
+}

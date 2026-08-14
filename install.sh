@@ -9,6 +9,7 @@ FILTER_DIR="$HOME/gmgn-volume-monitor"
 mkdir -p "$SCRIPT_DIR" "$CONFIG_DIR" "$FILTER_DIR"
 install -m 0755 "$ROOT/src/gmgn-dlmm-radar.py" "$SCRIPT_DIR/gmgn-dlmm-radar.py"
 install -m 0644 "$ROOT/config/filter-query.json" "$FILTER_DIR/filter_query.json"
+install -m 0644 "$ROOT/config/robinhood-filter-query.json" "$FILTER_DIR/robinhood_filter_query.json"
 
 if [[ ! -f "$CONFIG_DIR/telegram.env" ]]; then
   install -m 0600 "$ROOT/telegram.env.example" "$CONFIG_DIR/telegram.env"

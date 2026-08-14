@@ -1,12 +1,12 @@
 # GMGN V/L Radar
 
-A small Solana pool scanner built around GMGN market data. It ranks active pools by hourly volume relative to liquidity, adds a short-term flow reading, and posts the result to Telegram.
+A small Solana and Robinhood scanner built around GMGN market data. It ranks active pools by hourly volume relative to liquidity, checks short-term flow, and posts the result to Telegram.
 
-The script is meant for quick DLMM rotation. It does not place trades or touch a wallet.
+The script is meant for quick pool and momentum rotation. It does not place trades or touch a wallet.
 
 ## How it works
 
-The candidate list comes from GMGN Trending on Solana. Pools are ranked by:
+The candidate lists come from GMGN Trending on Solana and Robinhood. Each chain gets its own board, ranked by:
 
 ```text
 V/L = rolling 1h volume / liquidity
@@ -33,6 +33,8 @@ Speed labels:
 
 A hot reading measures activity, not safety. `🔥📉` usually means an active sell-off.
 
+The main boards show up to ten rows per chain. Separate spike boards scan the full eligible universe rather than only the top ten `V/L` rows. This catches short bursts that would otherwise sit below the visible cutoff.
+
 ## Filters
 
 The default Solana scan uses:
@@ -42,14 +44,16 @@ The default Solana scan uses:
 | Interval | 1h |
 | Minimum liquidity | $2,500 |
 | Minimum holders | 200 |
-| Minimum age | 1h |
+| Minimum age | 30m |
 | Minimum gas fee | 20 |
 | Minimum smart degen count | 2 |
-| Minimum swaps | 1,500 |
+| Minimum swaps | 500 |
 | Minimum market cap | $100,000 |
 | Social profile | Required |
 | Wash trading | Excluded |
 | Creator close | Not required |
+
+Robinhood uses the same interval, liquidity, holder, age, smart-degen, swap, and market-cap gates. It does not reuse Solana's minimum gas-fee gate. GMGN reports gas on a different scale for Robinhood, and applying `20` there removed active names from the candidate set.
 
 ## Requirements
 
@@ -185,44 +189,54 @@ Use `config/cron.json` when creating the scheduled job.
 
 ## Latest radar update
 
-The compact table now focuses on recent activity instead of showing raw volume and liquidity columns:
+The report now covers Robinhood alongside Solana. Both chains use GMGN Trending and the same `V/L`, swap, market-cap, and FLOW calculations. Each main board stops at ten rows, and the blank lines between tokens are gone so the report fits more comfortably on a phone.
 
-- The minimum token age was reduced from one hour to 30 minutes.
-- The rolling one-hour swap gate was reduced from 1,500 to 500 swaps.
-- These two discovery changes allow younger accelerating pools to enter the radar before their early activity cools down. All other eligibility gates and the one-hour `V/L` ranking stay unchanged.
-- `S1H` shows total swaps during the rolling one-hour window.
-- `S5M` shows swaps during the latest five minutes.
-- `S×` compares current five-minute swap speed with the one-hour baseline.
-- `FLOW` still measures five-minute volume speed and direction.
-- `VOL` and `LIQ` were removed from the display to keep the report readable on a phone. Liquidity is still used by the minimum-liquidity gate and as the denominator in `V/L`.
+Robinhood keeps the useful activity gates but skips Solana's `min-gas-fee 20` filter. During testing, that filter cut the Robinhood universe from 100 names to 27 and removed active runners such as DJT. Gas values are not directly comparable across the two chains.
 
-The broader gates increase coverage, not certainty. Use `S×` together with `FLOW` to separate an accelerating bullish pool from bot churn or a fast sell-off.
+There is also a spike board for each chain. It scans every eligible candidate with exact GMGN token data and looks for all four conditions at once:
+
+```text
+S×             at least 1.3
+FLOW           at least 1.2
+5m direction   bullish
+5m buy volume  at least 55%
+```
+
+`S5M` stays visible but is not a hard gate. A 200-swap minimum was tested and rolled back because it hid early moves that had strong normalized acceleration.
+
+The spike scan uses four bounded workers and reuses those token snapshots in the main boards. It does not call an AI model.
 
 ## Output
 
 ```text
-GMGN V/L — 07:48 Bali
+GMGN V/L — 14:31 Bali
 
 SOLANA
 SYM      V/L   S1H  S5M   S×    MC   FLOW
 --------------------------------------------
-PLANSEM 12.7  5622  478  1.0  1.6M  🟢📉0.8
+KNEWIT   1.8   830  300  4.3  725k  🔥📈2.9
+BOT      1.7  1524  475  3.7  379k  🔥🔄3.0
+Burpcoi  1.5   777   77  1.2  149k  🔥📉1.2
 
-cc       5.8  5590  427  0.9  1.4M  🟡📉0.8
+ROBINHOOD
+SYM      V/L   S1H  S5M   S×    MC   FLOW
+--------------------------------------------
+HOTDOG  16.0  4486  653  1.7  127k  🔥📉1.6
+DJT     13.3 20098  343  0.2  582k  🧊📉0.3
+GTAVI   10.2  3757  409  1.3  258k  🔥🔄1.4
 
-BOB      2.2  1652  266  1.9  235k  🔥📉2.4
+SOLANA SPIKE
+SYM     S5M  S×   MC     5M ST   FLOW
+----------------------------------------
+KNEWIT  300 4.3 725k +22.8%  L  🔥📈5.2
 
-V/L
-1h volume / liquidity.
-Higher = faster potential fee velocity.
+ROBINHOOD SPIKE
+SYM     S5M  S×   MC     5M ST   FLOW
+----------------------------------------
+none
 
-S×
-(5m swaps × 12) / rolling 1h swaps.
-≥1.3 accelerating   ≥2.0 explosive
-
-FLOW
-🔥 hot   🟢 active   🟡 cooling   🧊 cold
-📈 bullish  📉 bearish  🔄 mixed/chop
+ST
+E early   R running   L late
 
 RULE
 MAX HOLD 1 HOUR.
@@ -275,6 +289,18 @@ S× 0.5 + 🧊📈0.4   activity is slowing even if price is briefly rising
 
 A high `S×` is not automatically bullish. Bot churn and panic selling can also create a large number of swaps.
 
+## Spike board
+
+The spike board is sorted by combined swap and volume acceleration. It does not replace the `V/L` ranking above it. `ST` is a rough timing label based on the five-minute market-cap move:
+
+```text
+E  early     +1% to +12%
+R  running   above +12% to +20%
+L  late      above +20%
+```
+
+These labels describe where a move was detected. They are not entry or exit instructions. A late row can keep running, and an early row can reverse immediately.
+
 ## High-momentum example
 
 The radar can also be used to find short, high-momentum bursts. The screenshot below shows BUDDY appearing in the 10:01 AM report with:
@@ -308,6 +334,7 @@ The screenshot is an example, not a performance guarantee. Market cap doubling d
 ```text
 src/gmgn-dlmm-radar.py   scanner and Telegram sender
 config/filter-query.json GMGN filter reference
+config/robinhood-filter-query.json Robinhood filter reference
 config/cron.json         scheduled-job settings
 telegram.env.example     environment template
 install.sh               local installer
@@ -317,5 +344,6 @@ install.sh               local installer
 
 - The report is a scanner, not an execution system.
 - FLOW is a five-minute signal against a one-hour baseline. The report runs every five minutes.
+- Each chain's main board shows at most ten rows. Each spike board shows at most six.
 - Token symbols are display-only. Use the token address before acting on a result.
 - Maximum hold is an operating rule for this setup, not a guarantee of profit.

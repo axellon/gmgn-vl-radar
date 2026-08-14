@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scan Solana pools and send a compact V/L report to Telegram."""
+"""Scan GMGN pools and send compact V/L and momentum boards to Telegram."""
 
 import json
 import os
@@ -8,6 +8,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -38,6 +39,15 @@ TREND_CMD = (
     "--min-marketcap 100000"
 )
 
+# Robinhood exposes the same GMGN metrics, but its gas-fee scale differs.
+# Reusing Solana's min-gas-fee=20 gate hides active Robinhood runners.
+ROBINHOOD_CMD = (
+    "gmgn-cli market trending --chain robinhood --interval 1h --limit 100 "
+    "--order-by volume --direction desc "
+    "--min-liquidity 2500 --min-holder-count 200 --min-created 30m "
+    "--min-smart-degen-count 2 --min-swaps 500 --min-marketcap 100000"
+)
+
 
 def run(cmd):
     try:
@@ -55,11 +65,40 @@ def gather(cmd=TREND_CMD):
     return []
 
 def safe_for_dlmm(t):
-    """Solana safety gate: reject detected wash trading only."""
+    """Reject rows that GMGN explicitly marks as wash trading."""
     return t.get("is_wash_trading") is not True
 
 
-def flow_5m(t):
+def token_price_data(t):
+    """Fetch one exact token snapshot for swap/volume acceleration metrics."""
+    address = t.get("address")
+    chain = t.get("chain")
+    if not address or not chain:
+        return None
+    cmd = [
+        "gmgn-cli", "token", "info", "--chain", chain,
+        "--address", address, "--raw",
+    ]
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=25).stdout
+        data = json.loads(out).get("price", {})
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def token_price_map(hits):
+    """Fetch exact snapshots for the full eligible universe with bounded concurrency."""
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        snapshots = list(pool.map(token_price_data, hits))
+    return {
+        (t.get("chain"), t.get("address")): snapshot
+        for t, snapshot in zip(hits, snapshots)
+        if t.get("chain") and t.get("address") and snapshot
+    }
+
+
+def flow_5m(t, price_data=None):
     """Return volume FLOW plus five-minute swap acceleration."""
     address = t.get("address")
     chain = t.get("chain")
@@ -83,15 +122,8 @@ def flow_5m(t):
         close_5m = float(candles[-1].get("close") or 0)
         price_change_5m = ((close_5m / open_5m) - 1) if open_5m > 0 else 0
 
-        # Fetch exact five-minute directional volume and swap counts.
-        info_cmd = [
-            "gmgn-cli", "token", "info", "--chain", chain,
-            "--address", address, "--raw",
-        ]
-        info_out = subprocess.run(
-            info_cmd, capture_output=True, text=True, timeout=25
-        ).stdout
-        price_data = json.loads(info_out).get("price", {})
+        # Reuse the full-universe snapshot when available.
+        price_data = price_data or token_price_data(t) or {}
         buy_vol_5m = float(price_data.get("buy_volume_5m") or 0)
         sell_vol_5m = float(price_data.get("sell_volume_5m") or 0)
         swaps_5m = int(float(price_data.get("swaps_5m") or 0))
@@ -122,6 +154,7 @@ def flow_5m(t):
 def build():
     from datetime import datetime, timezone
     sol_hits = [t for t in gather(TREND_CMD) if safe_for_dlmm(t)]
+    robinhood_hits = [t for t in gather(ROBINHOOD_CMD) if safe_for_dlmm(t)]
 
     def rank_key(t):
         vol = float(t.get("volume") or 0)
@@ -129,6 +162,11 @@ def build():
         return (vol / liq if liq > 0 else 0, vol)
 
     sol_hits.sort(key=rank_key, reverse=True)
+    robinhood_hits.sort(key=rank_key, reverse=True)
+    price_by_address = token_price_map(sol_hits + robinhood_hits)
+
+    def snapshot_for(t):
+        return price_by_address.get((t.get("chain"), t.get("address")))
 
     try:
         local_tz = ZoneInfo(RADAR_TIMEZONE)
@@ -153,22 +191,63 @@ def build():
         lines.append("-" * 44)
         if not hits:
             lines.append("none")
-        for t in hits[:12]:
+        for t in hits[:10]:
             sym = (t.get("symbol") or "?")[:7]
             vol_n = float(t.get('volume') or 0)
             liq_n = float(t.get('liquidity') or 0)
             vl = f"{vol_n/liq_n:.1f}" if liq_n > 0 else "-"
-            _, flow, swaps_1h, swaps_5m, swap_speed = flow_5m(t)
+            _, flow, swaps_1h, swaps_5m, swap_speed = flow_5m(
+                t, snapshot_for(t)
+            )
             speed = f"{swap_speed:.1f}" if swap_speed is not None else "-"
             mc = money(t.get('market_cap'))
             lines.append(f"{sym:<7} {vl:>4} {swaps_1h:>5} {swaps_5m:>4} {speed:>4} {mc:>5}  {flow:>5}")
-            lines.append("")
-
-        # Remove the trailing blank after the last token.
-        if hits and lines[-1] == "":
-            lines.pop()
 
     add_section("SOLANA", sol_hits)
+    lines.append("")
+    add_section("ROBINHOOD", robinhood_hits)
+
+    def add_spike_section(title, hits):
+        spike_rows = []
+        for t in hits:
+            price_data = snapshot_for(t) or {}
+            vol_1h = float(price_data.get("volume_1h") or t.get("volume") or 0)
+            vol_5m = float(price_data.get("volume_5m") or 0)
+            swaps_1h = float(price_data.get("swaps_1h") or t.get("swaps") or 0)
+            swaps_5m = int(float(price_data.get("swaps_5m") or 0))
+            current_price = float(price_data.get("price") or t.get("price") or 0)
+            price_5m = float(price_data.get("price_5m") or 0)
+            buy_vol_5m = float(price_data.get("buy_volume_5m") or 0)
+            sell_vol_5m = float(price_data.get("sell_volume_5m") or 0)
+            flow = (vol_5m * 12 / vol_1h) if vol_1h > 0 else 0
+            swap_speed = (swaps_5m * 12 / swaps_1h) if swaps_1h > 0 else 0
+            change_5m = ((current_price / price_5m) - 1) * 100 if price_5m > 0 else 0
+            buy_share = (
+                buy_vol_5m / (buy_vol_5m + sell_vol_5m)
+                if buy_vol_5m + sell_vol_5m > 0 else 0
+            )
+            bullish = change_5m > 1 and buy_vol_5m > sell_vol_5m * 1.05
+            if swap_speed >= 1.3 and flow >= 1.2 and bullish and buy_share >= 0.55:
+                stage = "E" if change_5m <= 12 else ("R" if change_5m <= 20 else "L")
+                spike_rows.append((flow * swap_speed, t, swaps_5m, swap_speed, flow, change_5m, stage))
+
+        spike_rows.sort(key=lambda row: row[0], reverse=True)
+        lines.extend(["", title])
+        lines.append(f"{'SYM':<7} {'S5M':>3} {'S×':>3} {'MC':>4} {'5M':>6} {'ST':>2}  {'FLOW':>5}")
+        lines.append("-" * 40)
+        if not spike_rows:
+            lines.append("none")
+        for _, t, swaps_5m, swap_speed, flow, change_5m, stage in spike_rows[:6]:
+            sym = (t.get("symbol") or "?")[:7]
+            mc = money(t.get("market_cap"))
+            icon = "🔥" if flow > 1.20 else "🟢"
+            lines.append(
+                f"{sym:<7} {swaps_5m:>3} {swap_speed:>3.1f} {mc:>4} "
+                f"{change_5m:>+5.1f}% {stage:>2}  {icon}📈{flow:.1f}"
+            )
+
+    add_spike_section("SOLANA SPIKE", sol_hits)
+    add_spike_section("ROBINHOOD SPIKE", robinhood_hits)
     lines.extend([
         "",
         "V/L",
@@ -182,6 +261,9 @@ def build():
         "FLOW",
         "🔥 hot   🟢 active   🟡 cooling   🧊 cold",
         "📈 bullish  📉 bearish  🔄 mixed/chop",
+        "",
+        "ST",
+        "E early   R running   L late",
         "",
         "RULE",
         "MAX HOLD 1 HOUR.",
