@@ -275,6 +275,34 @@ S× 0.5 + 🧊📈0.4   activity is slowing even if price is briefly rising
 
 A high `S×` is not automatically bullish. Bot churn and panic selling can also create a large number of swaps.
 
+## High-momentum example
+
+The radar can also be used to find short, high-momentum bursts. The screenshot below shows BUDDY appearing in the 10:01 AM report with:
+
+```text
+V/L      14.2
+S1H     9,424
+S5M       935
+S×        1.2
+MC       $152k
+FLOW     bullish 1.5
+```
+
+By about 10:13 AM, the chart showed market cap near `$306.35k`. That is roughly a `2.02x` move in 12 minutes from the radar snapshot.
+
+![BUDDY high-momentum example](assets/buddy-momentum-example.jpg)
+
+This is the fast-rotation use case:
+
+```text
+find accelerating activity
+confirm direction with FLOW
+manage the position quickly
+get out and rotate to the next pool
+```
+
+The screenshot is an example, not a performance guarantee. Market cap doubling does not guarantee that every position receives the same return. Entry timing, exit timing, liquidity, slippage, and fees all affect the result. The radar surfaces activity; it does not place trades or decide exits.
+
 ## Files
 
 ```text
