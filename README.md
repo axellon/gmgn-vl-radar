@@ -1,16 +1,20 @@
 # GMGN V/L Radar
 
-A small Solana and Robinhood scanner built around GMGN market data. It ranks active pools by hourly volume relative to liquidity, checks short-term flow, and posts the result to Telegram.
+![GMGN V/L Radar](assets/crocodile-pixel-art.jpg)
+
+A small Solana, Robinhood, and Base scanner built around GMGN market data. It ranks active pools by hourly volume relative to liquidity, checks short-term flow, and posts the result to Telegram.
 
 The script is meant for quick pool and momentum rotation. It does not place trades or touch a wallet.
 
 ## How it works
 
-The candidate lists come from GMGN Trending on Solana and Robinhood. Each chain gets its own board, ranked by:
+The candidate lists come from GMGN Trending. Each enabled chain gets its own board, ranked by:
 
 ```text
 V/L = rolling 1h volume / liquidity
 ```
+
+The active chains are defined in `config/chains.json`. The repository ships with Solana enabled and Robinhood plus Base available but disabled. You can turn any of them on (or add more, such as BSC) without editing the script. See [Commands](#commands) for the one-line toggles.
 
 `FLOW` compares the latest five minutes with the rolling one-hour volume:
 
@@ -187,13 +191,41 @@ The included cron config runs every ten minutes with `no_agent: true`. The scrip
 
 Use `config/cron.json` when creating the scheduled job.
 
+## Commands
+
+The radar runs as a zero-LLM cron (`no_agent: true`). All changes are plain slash-style commands that edit `config/chains.json` directly — no AI model is involved:
+
+```bash
+python3 src/gmgn-dlmm-radar.py /sol     # Solana only (disables the rest)
+python3 src/gmgn-dlmm-radar.py /rh      # Robinhood only
+python3 src/gmgn-dlmm-radar.py /base    # Base only
+python3 src/gmgn-dlmm-radar.py /all     # enable Solana + Robinhood + Base
+python3 src/gmgn-dlmm-radar.py /5       # set cadence to 5 minutes
+python3 src/gmgn-dlmm-radar.py /10      # set cadence to 10 minutes
+python3 src/gmgn-dlmm-radar.py /30      # set cadence to 30 minutes
+python3 src/gmgn-dlmm-radar.py /run     # build and send the board now
+```
+
+Each chain toggle writes straight to `config/chains.json`, so the next scheduled run picks it up automatically. After changing the interval, also update the Hermes cron schedule to `*/N * * * *` (for example `*/5 * * * *` when you use `/5`) so the reported cadence matches the real one.
+
+To add a chain that is not listed (Solana, Robinhood, Base), edit `config/chains.json` and add an object with `chain`, `title`, and `extra_gates`. The board renders one section per enabled chain in the order the file lists them, and the `HOT POOL` alert section follows the first enabled chain.
+
 ## Latest radar update
 
-The report covers Robinhood alongside Solana. Both chains use GMGN Trending and the same `V/L`, swap, market-cap, and FLOW calculations. Each board stops at five rows, and the blank lines between tokens are gone so the report fits more comfortably on a phone.
+The board is now fully config-driven through `config/chains.json`. The same `V/L`, swap, market-cap, and `FLOW` calculations run per enabled chain, and the report renders one tight board per chain in the order the config lists them. Each board stops at five rows so the whole report stays readable on a phone.
 
-Robinhood keeps the useful activity gates but skips Solana's `min-gas-fee 20` filter. During testing, that filter cut the Robinhood universe from 100 names to 27 and removed active runners such as DJT. Gas values are not directly comparable across the two chains.
+A `HOT POOL` section now follows the first enabled chain. When any candidate on that chain shows 1,000 or more swaps in the latest five minutes, the report appends a line such as:
 
-The separate momentum callout tables were removed. The report now sticks to the two ranked data boards. `S5M`, `S×`, and `FLOW` remain visible as measurements, but the report does not label a token as an entry.
+```text
+HOT POOL
+🔥 Hot Pool Alert MINDCAT🚨 (S5M 3147)
+```
+
+The same footer now also lists the available commands, with the `RULE / MAX HOLD 1 HOUR` line kept as the very last thing in the report.
+
+Robinhood and Base keep the useful activity gates (holder, swap, market-cap, and a soft liquidity floor) but skip Solana's `min-gas-fee 20` filter. Gas values are not directly comparable across chains. Solana keeps its tighter gate (holder 200, swap 500, smart-degen 2) to filter out thin clusters.
+
+The separate momentum callout tables were removed earlier. The report sticks to the ranked data boards; `S5M`, `S×`, and `FLOW` remain visible as measurements, but the report does not label a token as an entry.
 
 ## Output
 
@@ -351,6 +383,7 @@ src/gmgn-dlmm-radar.py   scanner and Telegram sender
 config/filter-query.json GMGN filter reference
 config/robinhood-filter-query.json Robinhood filter reference
 config/cron.json         scheduled-job settings
+config/chains.json       enabled chains + cadence (edit via slash commands)
 telegram.env.example     environment template
 install.sh               local installer
 ```

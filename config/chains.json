@@ -1,0 +1,24 @@
+{
+  "interval_min": 10,
+  "note": "interval_min is the cron cadence in minutes. Set the Hermes cron schedule to */{interval_min} * * * * to match. Or use the cron helper below.",
+  "chains": [
+    {
+      "enabled": true,
+      "title": "SOLANA",
+      "chain": "sol",
+      "extra_gates": "--filter has_social --filter not_wash_trading --min-gas-fee 20 --min-smart-degen-count 2 --min-swaps 500 --min-marketcap 1000"
+    },
+    {
+      "enabled": false,
+      "title": "ROBINHOOD",
+      "chain": "robinhood",
+      "extra_gates": "--min-swaps 300 --min-marketcap 1000 --max-marketcap 5000000"
+    },
+    {
+      "enabled": false,
+      "title": "BASE",
+      "chain": "base",
+      "extra_gates": "--min-swaps 300 --min-marketcap 1000 --max-marketcap 5000000"
+    }
+  ]
+}
